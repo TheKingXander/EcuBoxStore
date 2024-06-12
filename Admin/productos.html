@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - EcuBoxStore</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+        .admin-panel {
+            width: 400px;
+            background-color: white;
+            padding: 20px;
+            margin-top: 50px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .admin-panel h2 {
+            margin-bottom: 20px;
+        }
+        .admin-panel select, .admin-panel input, .admin-panel button, .admin-panel textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .admin-panel button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .admin-panel button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="admin-panel">
+        <h2>Añadir Producto</h2>
+        <input type="text" id="product-name" placeholder="Nombre del producto" required>
+        <textarea id="product-description" placeholder="Descripción" rows="3" required></textarea>
+        <input type="number" id="product-cost" placeholder="Costo" step="0.01" required>
+        <input type="number" id="product-price" placeholder="Precio de venta al público" step="0.01" required>
+        <input type="url" id="product-image-url" placeholder="URL de la imagen" required>
+        <select id="product-section" required>
+            <option value="" disabled selected>Selecciona la sección</option>
+            <option value="Cuentas de Streaming">Cuentas de Streaming</option>
+            <option value="Netflix">Netflix</option>
+            <option value="Netflix2">Netflix2</option>
+            <option value="Netflix4">Netflix4</option>
+            <option value="Disney1">Disney1</option>
+            <option value="Disney2">Disney2</option>
+            <option value="Disney4">Disney4</option>
+            <option value="Spotify">Spotify</option>
+            <option value="Disney+">Disney+</option>
+            <option value="Max">Max</option>
+        </select>
+        <button onclick="addProduct()">Añadir Producto</button>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyD_RyxMxBQseneRDdM5BpHSvb6M3JXq26k",
+            authDomain: "ecuboxstore.firebaseapp.com",
+            projectId: "ecuboxstore",
+            storageBucket: "ecuboxstore.appspot.com",
+            messagingSenderId: "352810445304",
+            appId: "1:352810445304:web:24bb2a9545a4e269f48e0d",
+            measurementId: "G-0JWRSLHPWE"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Función para añadir un producto
+        function addProduct() {
+            const name = document.getElementById('product-name').value;
+            const description = document.getElementById('product-description').value;
+            const cost = parseFloat(document.getElementById('product-cost').value);
+            const price = parseFloat(document.getElementById('product-price').value);
+            const imageUrl = document.getElementById('product-image-url').value;
+            const section = document.getElementById('product-section').value;
+
+            if (name && description && !isNaN(cost) && !isNaN(price) && imageUrl && section) {
+                db.collection('productos').add({
+                    nombre: name,
+                    descripcion: description,
+                    costo: cost,
+                    precio: price,
+                    imagen: imageUrl,
+                    seccion: section
+                }).then(() => {
+                    alert('Producto añadido exitosamente');
+                    document.getElementById('product-name').value = '';
+                    document.getElementById('product-description').value = '';
+                    document.getElementById('product-cost').value = '';
+                    document.getElementById('product-price').value = '';
+                    document.getElementById('product-image-url').value = '';
+                    document.getElementById('product-section').selectedIndex = 0;
+                }).catch((error) => {
+                    console.error('Error al añadir el producto:', error);
+                    alert('Error al añadir el producto: ' + error.message);
+                });
+            } else {
+                alert('Por favor completa todos los campos con valores válidos');
+            }
+        }
+    </script>
+</body>
+</html>
