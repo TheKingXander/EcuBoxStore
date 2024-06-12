@@ -1,8 +1,0 @@
-    const firebaseConfig = {
-      apiKey: "AIzaSyD_RyxMxBQseneRDdM5BpHSvb6M3JXq26k",
-      authDomain: "ecuboxstore.firebaseapp.com",
-      projectId: "ecuboxstore",
-      storageBucket: "ecuboxstore.appspot.com",
-      messagingSenderId: "352810445304",
-      appId: "1:352810445304:web:24bb2a9545a4e269f48e0d",
-      measurementId: "G-0JWRSLHPWE"
