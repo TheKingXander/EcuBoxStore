@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Pedidos - EcuBoxStore</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #333;
+            color: white;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100%;
+            transition: width 0.3s ease-in-out;
+        }
+        .sidebar.closed {
+            width: 60px;
+        }
+        .sidebar h2 {
+            margin-top: 0;
+        }
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #444;
+            border-radius: 4px;
+        }
+        .sidebar a:hover {
+            background-color: #555;
+        }
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            background-color: #f4f4f4;
+            margin-left: 275px;
+            transition: margin-left 0.3s ease-in-out;
+        }
+        .section {
+            background-color: #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .section h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar" id="sidebar">
+        <h2>EcuBoxStore</h2>
+        <a href="spotify.html">Spotify</a>
+        <a href="pedidos.html">Mis Pedidos</a>
+        <a href="logout.html">Cerrar Sesión</a>
+        <div class="card">
+            <h3>Saldo</h3>
+            <p id="saldo-usuario">0</p>
+        </div>
+        <div class="card">
+            <h3>Ganancias</h3>
+            <p id="ganancias-usuario">0</p>
+        </div>
+    </div>
+    <div class="main-content">
+        <h1>Mis Pedidos</h1>
+        <div class="section">
+            <h3>Lista de Pedidos</h3>
+            <table id="pedidos-table">
+                <thead>
+                    <tr>
+                        <th>Número de Pedido</th>
+                        <th>Cliente</th>
+                        <th>Teléfono</th>
+                        <th>Orden para Renovar</th>
+                        <th>Producto</th>
+                        <th>Precio</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyD_RyxMxBQseneRDdM5BpHSvb6M3JXq26k",
+            authDomain: "ecuboxstore.firebaseapp.com",
+            projectId: "ecuboxstore",
+            storageBucket: "ecuboxstore.appspot.com",
+            messagingSenderId: "352810445304",
+            appId: "1:352810445304:web:24bb2a9545a4e269f48e0d",
+            measurementId: "G-0JWRSLHPWE"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Obtener el saldo y ganancias del usuario
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                db.collection('usuarios').doc(user.uid).get().then(doc => {
+                    const userData = doc.data();
+                    document.getElementById('saldo-usuario').innerText = userData.saldo.toFixed(2);
+                    document.getElementById('ganancias-usuario').innerText = userData.ganancias.toFixed(2);
+
+                    // Obtener lista de pedidos del usuario
+                    db.collection('pedidos').where('usuarioId', '==', user.uid).get().then(snapshot => {
+                        const pedidosTable = document.getElementById('pedidos-table').getElementsByTagName('tbody')[0];
+                        snapshot.forEach(doc => {
+                            const pedidoData = doc.data();
+                            const row = pedidosTable.insertRow();
+                            row.insertCell(0).innerText = pedidoData.pedidoId;
+                            row.insertCell(1).innerText = pedidoData.nombreCliente;
+                            row.insertCell(2).innerText = pedidoData.telefonoCliente;
+                            row.insertCell(3).innerText = pedidoData.ordenRenovar;
+                            row.insertCell(4).innerText = pedidoData.producto;
+                            row.insertCell(5).innerText = `$${pedidoData.precio.toFixed(2)}`;
+                            row.insertCell(6).innerText = new Date(pedidoData.timestamp.seconds * 1000).toLocaleString();
+                        });
+                    }).catch(error => {
+                        console.log('Error obteniendo pedidos:', error);
+                    });
+                }).catch(error => {
+                    console.log('Error obteniendo datos del usuario:', error);
+                });
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+    </script>
+</body>
+</html>

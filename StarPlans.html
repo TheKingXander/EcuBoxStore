@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StarPlans - EcuBoxStore</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #000;
+            color: white;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100%;
+            transition: width 0.3s ease-in-out; /* Transición suave para la animación de ocultar/mostrar */
+        }
+        .sidebar.closed {
+            width: 60px; /* Ancho mínimo cuando está cerrado */
+        }
+        .sidebar h2 {
+            margin-top: 0;
+        }
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #444;
+            border-radius: 4px;
+        }
+        .sidebar a:hover {
+            background-color: #555;
+        }
+        .sidebar .card {
+            background-color: #444;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar .card h3 {
+            margin: 0 0 5px 0;
+            font-size: 1em;
+        }
+        .sidebar .card p {
+            font-size: 1.2em;
+            color: #fff;
+            margin: 0;
+        }
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            background-color: #FF9B00;
+            margin-left: 275px; /* Ajuste para el menú fijo */
+            transition: margin-left 0.3s ease-in-out; /* Transición suave para la animación de ocultar/mostrar */
+        }
+        .section {
+            background-color: black;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .section h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: white;
+        }
+        .subsections {
+            display: flex;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .subsection {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            width: calc(20% - 10px);
+            margin-right: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+        }
+        .subsection h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .subsection img {
+            max-width: 100%;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .toggle-btn:hover {
+            background-color: #444;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar" id="sidebar">
+        <h2>EcuBoxStore</h2>
+        <a href="mi-panel.html">Inicio</a>
+        <a href="pedidos.html">Mis Pedidos</a>
+        <a href="logout.html">Cerrar Sesión</a>
+        <div class="card">
+            <h3>Saldo</h3>
+            <p id="saldo-usuario">0</p>
+        </div>
+    </div>
+    <div class="main-content">
+        <h2>Star+ Plans</h2>
+        <div class="section">
+            <h3>Cuentas de Streaming</h3>
+            <div class="subsections">
+                <a href="star1dispositivo.html" class="subsection">
+                    <img src="https://i.imgur.com/iJCOe6S.jpeg" alt="Star 1 Dispositivo">
+                    <h4>Star 1 Dispositivo</h4>
+                </a>
+                <a href="star2dispositivos.html" class="subsection">
+                    <img src="https://i.imgur.com/lXbPt3U.jpeg" alt="Star 2 Dispositivo">
+                    <h4>Star 2 Dispositivo</h4>
+                </a>
+                <a href="star4dispositivos.html" class="subsection">
+                    <img src="https://i.imgur.com/CFnJozd.jpeg" alt="Star 4 Dispositivo">
+                    <h4>Star 4 Dispositivo</h4>
+                </a>
+
+                <!-- Agrega más subsecciones según sea necesario -->
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyD_RyxMxBQseneRDdM5BpHSvb6M3JXq26k",
+            authDomain: "ecuboxstore.firebaseapp.com",
+            projectId: "ecuboxstore",
+            storageBucket: "ecuboxstore.appspot.com",
+            messagingSenderId: "352810445304",
+            appId: "1:352810445304:web:24bb2a9545a4e269f48e0d",
+            measurementId: "G-0JWRSLHPWE"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Función para alternar la visibilidad del menú lateral
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('closed');
+        }
+
+        // Obtener información del usuario
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                const userId = user.uid;
+                const userDoc = db.collection('usuarios').doc(userId);
+
+                userDoc.get().then(doc => {
+                    if (doc.exists) {
+                        const data = doc.data();
+                        document.getElementById('saldo-usuario').innerText = data.saldo ? data.saldo.toFixed(2) : '0.00';
+                        document.getElementById('ganancias-usuario').innerText = data.ganancias ? data.ganancias.toFixed(2) : '0.00';
+                    } else {
+                        console.log('No such document!');
+                    }
+                }).catch(error => {
+                    console.log('Error getting document:', error);
+                });
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+    </script>
+</body>
+</html>

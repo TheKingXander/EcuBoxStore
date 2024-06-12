@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Star+ - EcuBoxStore</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: black;
+            color: white;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100%;
+            transition: width 0.3s ease-in-out;
+        }
+        .sidebar.closed {
+            width: 60px;
+        }
+        .sidebar h2 {
+            margin-top: 0;
+        }
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #444;
+            border-radius: 4px;
+        }
+        .sidebar a:hover {
+            background-color: #555;
+        }
+        .card {
+            background-color: #444;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            background-color: #FF9B00;
+            margin-left: 275px;
+            transition: margin-left 0.3s ease-in-out;
+        }
+        .section {
+            background-color: black;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .section h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: white;
+        }
+        .product-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .product-card {
+            width: calc(20% - 10px);
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .product-card img {
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        .product-card h4 {
+            margin: 10px 0;
+        }
+        .product-card button {
+            background-color: green;
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .product-card button:hover {
+            background-color: darkgreen;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            padding-top: 60px;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 40%;
+            position: relative;
+            text-align: center;
+        }
+        .modal-content img {
+            width: 30%;
+            height: auto;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .form-container {
+            margin-top: 20px;
+        }
+        .form-container label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-container input[type="text"],
+        .form-container input[type="tel"] {
+            width: 85%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .form-container input[type="submit"],
+        .form-container button {
+            background-color: green;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .form-container input[type="submit"]:hover,
+        .form-container button:hover {
+            background-color: darkgreen;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar" id="sidebar">
+        <h2>EcuBoxStore</h2>
+        <a href="mi-panel.html">Inicio</a>
+        <a href="pedidos.html">Mis Pedidos</a>
+        <a href="logout.html">Cerrar Sesión</a>
+        <div class="card">
+            <h3>Saldo</h3>
+            <p id="saldo-usuario">0</p>
+        </div>
+    </div>
+    <div class="main-content">
+        <h1>Star+ 4 Dispositivo</h1>
+        <div class="section">
+            <h3>Planes Disponibles</h3>
+            <div class="product-container" id="product-container">
+                <!-- Productos de Spotify se insertarán aquí -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="myModal" class="modal">
+        <div class="modal-content" id="modal-content">
+            <!-- Contenido del modal se insertará aquí -->
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyD_RyxMxBQseneRDdM5BpHSvb6M3JXq26k",
+            authDomain: "ecuboxstore.firebaseapp.com",
+            projectId: "ecuboxstore",
+            storageBucket: "ecuboxstore.appspot.com",
+            messagingSenderId: "352810445304",
+            appId: "1:352810445304:web:24bb2a9545a4e269f48e0d",
+            measurementId: "G-0JWRSLHPWE"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Obtener usuario actual y actualizar saldo y ganancias
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                db.collection('usuarios').doc(user.uid).get().then(doc => {
+                    const userData = doc.data();
+                    document.getElementById('saldo-usuario').innerText = userData.saldo.toFixed(2);
+                    document.getElementById('ganancias-usuario').innerText = userData.ganancias.toFixed(2);
+                }).catch(error => {
+                    console.log('Error obteniendo datos del usuario:', error);
+                });
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+
+        // Obtener productos de Spotify de la base de datos
+        db.collection('productos').where('seccion', '==', 'Star4').get().then(snapshot => {
+            const productContainer = document.getElementById('product-container');
+            snapshot.forEach(doc => {
+                const productData = doc.data();
+                const productCard = document.createElement('div');
+                productCard.className = 'product-card';
+                productCard.innerHTML = `
+                    <img src="${productData.imagen}" alt="${productData.nombre}">
+                    <h5>Precio: $${productData.precio}</h5>
+                    <button onclick="openModal('${doc.id}', '${productData.nombre}', '${productData.imagen}', ${productData.costo}, ${productData.precio})">Vender</button>
+                `;
+                productContainer.appendChild(productCard);
+            });
+        }).catch(error => {
+            console.log('Error obteniendo productos:', error);
+        });
+
+        // Función para alternar la visibilidad del menú lateral
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('closed');
+        }
+
+        // Función para abrir el modal con los detalles del plan seleccionado
+        function openModal(productId, productName, productImage, productCost, productPrice) {
+            const modal = document.getElementById('myModal');
+            const modalContent = document.getElementById('modal-content');
+            modalContent.innerHTML = `
+                <span class="close" onclick="closeModal()">&times;</span>
+                <img src="${productImage}" alt="${productName}">
+                <p>Costo: $${productCost.toFixed(2)}</p>
+                <p>Precio: $${productPrice.toFixed(2)}</p>
+                <div class="form-container">
+                    <label for="nombre">Nombre:</label>
+                    <input type="text" id="nombre" name="nombre">
+                    <label for="telefono">Teléfono:</label>
+                    <input type="tel" id="telefono" name="telefono">
+                    <label for="orden-renovar">Número de Orden para Renovar (opcional):</label>
+                    <input type="text" id="orden-renovar" name="orden-renovar">
+                    <button onclick="venderProducto('${productId}', '${productName}', ${productCost}, ${productPrice})">Vender</button>
+                </div>
+            `;
+            modal.style.display = "block";
+        }
+
+        // Función para cerrar el modal
+        function closeModal() {
+            const modal = document.getElementById('myModal');
+            modal.style.display = "none";
+        }
+
+        // Función para vender el producto
+        function venderProducto(productId, productName, productCost, productPrice) {
+            const user = auth.currentUser;
+            const nombreCliente = document.getElementById('nombre').value;
+            const telefonoCliente = document.getElementById('telefono').value;
+            const ordenRenovar = document.getElementById('orden-renovar').value;
+            const diferencia = productPrice - productCost;
+
+            if (user) {
+                db.collection('usuarios').doc(user.uid).get().then(doc => {
+                    const userData = doc.data();
+
+                    if (userData.saldo >= productCost) {
+                        // Actualizar saldo y ganancias del usuario
+                        const nuevoSaldo = userData.saldo - productCost;
+                        const nuevasGanancias = userData.ganancias + diferencia;
+
+                        db.collection('usuarios').doc(user.uid).update({
+                            saldo: nuevoSaldo,
+                            ganancias: nuevasGanancias
+                        }).then(() => {
+                            // Crear nuevo pedido en Firestore
+                            const pedidoId = Math.floor(Math.random() * 1000000).toString();
+                            db.collection('pedidos').add({
+                                pedidoId: pedidoId,
+                                usuarioId: user.uid,
+                                nombreCliente: nombreCliente,
+                                telefonoCliente: telefonoCliente,
+                                ordenRenovar: ordenRenovar || null,
+                                producto: productName,
+                                precio: productPrice,
+                                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                            }).then(() => {
+                                window.location.href = 'pedidos.html';
+                            }).catch(error => {
+                                console.log('Error creando pedido:', error);
+                            });
+                        }).catch(error => {
+                            console.log('Error actualizando usuario:', error);
+                        });
+                    } else {
+                        alert('Saldo insuficiente.');
+                    }
+                }).catch(error => {
+                    console.log('Error obteniendo datos del usuario:', error);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
